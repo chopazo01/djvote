@@ -1,0 +1,13 @@
+{
+  "name": "djvote",
+  "version": "2.0.0",
+  "description": "DJ Vote App - Live song voting with Spotify & WebSockets",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  }
+}
