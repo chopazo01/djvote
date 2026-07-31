@@ -42,14 +42,15 @@ wss.on('connection', (ws) => {
   });
 });
 
-// Proxy Spotify
+// Proxy Spotify con credenciales fijas
+const SPOTIFY_CLIENT_ID = '3771de1cb08541dbb62c9c8164a12852';
+const SPOTIFY_CLIENT_SECRET = '154a909e4a924686a490f53eb16feb89';
+
 app.post('/api/spotify-token', async (req, res) => {
-  const { clientId, clientSecret } = req.body;
-  if (!clientId || !clientSecret) return res.status(400).json({ error: 'Credenciales requeridas' });
   try {
     const r = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': 'Basic ' + Buffer.from(clientId + ':' + clientSecret).toString('base64') },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': 'Basic ' + Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64') },
       body: 'grant_type=client_credentials',
     });
     const d = await r.json();

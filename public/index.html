@@ -234,10 +234,8 @@ async function ensureToken() {
   const tok = localStorage.getItem(TOK_KEY);
   const exp = parseInt(localStorage.getItem(EXP_KEY) || '0');
   if (tok && Date.now() < exp - 60000) return tok;
-  const cid = getCID(), cs = getCS();
-  if (!cid || !cs) return '';
   try {
-    const r = await fetch('/api/spotify-token', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ clientId: cid, clientSecret: cs }) });
+    const r = await fetch('/api/spotify-token', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
     const d = await r.json();
     if (!r.ok) return '';
     localStorage.setItem(TOK_KEY, d.access_token);
@@ -274,8 +272,8 @@ function renderUser() {
   }
 
   let html = `<div class="search-page">
-    <h2 style="margin-bottom:16px">¿Qué canción quieres?</h2>
-    
+    <h2>¿Qué canción quieres?</h2>
+    <p class="sub">Busca en Spotify y elige la que quieras</p>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="search-input" placeholder="Buscar canción o artista..." value="${esc(searchQuery)}" autocomplete="off" />
