@@ -179,11 +179,13 @@
 <script>
 // ═══ STATE ═══
 let currentView = 'landing';
-let appState = { suggestions: [], hasSubmitted: false };
+let appState = { suggestions: [] };
 let selectedSong = null;
 let searchResults = [];
 let searchQuery = '';
 let searchTimeout = null;
+let justSent = false;
+let justSentSong = null;
 
 const CID_KEY = 'djvote_cid', CS_KEY = 'djvote_cs', TOK_KEY = 'djvote_tok', EXP_KEY = 'djvote_exp';
 
@@ -196,9 +198,16 @@ function connectWS() {
   ws.onclose = () => setTimeout(connectWS, 2000);
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
-    if (msg.type === 'state') { appState = { suggestions: msg.suggestions, hasSubmitted: msg.hasSubmitted }; renderCurrentView(); }
-    if (msg.type === 'submit_confirmed') { appState.hasSubmitted = true; renderCurrentView(); }
-    if (msg.type === 'already_submitted') { appState.hasSubmitted = true; renderCurrentView(); }
+    if (msg.type === 'state') { appState.suggestions = msg.suggestions; renderCurrentView(); }
+    if (msg.type === 'submit_confirmed') {
+      justSent = true;
+      justSentSong = selectedSong;
+      selectedSong = null;
+      searchQuery = '';
+      searchResults = [];
+      renderCurrentView();
+      setTimeout(() => { justSent = false; justSentSong = null; renderCurrentView(); }, 2500);
+    }
   };
 }
 function send(msg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); }
@@ -250,26 +259,16 @@ async function searchSpotify(q) {
 
 // ═══ USER RENDER ═══
 function renderUser() {
-  if (appState.hasSubmitted && selectedSong) {
+  if (justSent) {
     document.getElementById('user-content').innerHTML = `
       <div class="done-screen">
         <div class="check-circle">✓</div>
         <h2>¡Canción enviada!</h2>
-        <p>El DJ ya puede ver tu sugerencia</p>
-        <div class="done-song">
-          <img src="${esc(selectedSong.image)}" alt="" />
-          <div class="info"><div class="title">${esc(selectedSong.name)}</div><div class="artist">${esc(selectedSong.artist)}</div></div>
-        </div>
-      </div>`;
-    return;
-  }
-
-  if (appState.hasSubmitted) {
-    document.getElementById('user-content').innerHTML = `
-      <div class="done-screen">
-        <div class="check-circle">✓</div>
-        <h2>¡Canción enviada!</h2>
-        <p>El DJ ya puede ver tu sugerencia 🎶</p>
+        ${justSentSong ? `<div class="done-song">
+          <img src="${esc(justSentSong.image)}" alt="" />
+          <div class="info"><div class="title">${esc(justSentSong.name)}</div><div class="artist">${esc(justSentSong.artist)}</div></div>
+        </div>` : ''}
+        <p style="color:var(--text3);font-size:0.85rem;margin-top:12px">Volviendo al buscador...</p>
       </div>`;
     return;
   }
@@ -412,8 +411,16 @@ document.getElementById('go-dj').addEventListener('click', () => { showView('dj'
 document.getElementById('go-user').addEventListener('click', () => showView('user'));
 document.getElementById('dj-back').addEventListener('click', () => { showView('landing'); document.getElementById('landing').style.display = ''; });
 
-if (window.location.hash === '#dj') { document.getElementById('landing').style.display = 'none'; showView('dj'); if (!hasCreds()) openModal(); }
-else if (window.location.hash === '#user') { document.getElementById('landing').style.display = 'none'; showView('user'); }
+// Si viene por QR (#user), ocultar landing y DJ, solo mostrar user
+if (window.location.hash === '#user') {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('dj-view').style.display = 'none';
+  showView('user');
+} else if (window.location.hash === '#dj') {
+  document.getElementById('landing').style.display = 'none';
+  showView('dj');
+  if (!hasCreds()) openModal();
+}
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
 connectWS();

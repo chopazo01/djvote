@@ -12,37 +12,32 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 let suggestions = []; // [{ id, name, artist, image, count }]
-let submittedIPs = new Set();
 
 function broadcast(msg) {
   const data = JSON.stringify(msg);
   wss.clients.forEach(c => { if (c.readyState === 1) c.send(data); });
 }
 
-wss.on('connection', (ws, req) => {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
-  ws.send(JSON.stringify({ type: 'state', suggestions, hasSubmitted: submittedIPs.has(ip) }));
+wss.on('connection', (ws) => {
+  ws.send(JSON.stringify({ type: 'state', suggestions }));
 
   ws.on('message', (raw) => {
     let msg; try { msg = JSON.parse(raw); } catch { return; }
 
     if (msg.type === 'user:suggest') {
-      if (submittedIPs.has(ip)) { ws.send(JSON.stringify({ type: 'already_submitted' })); return; }
       const name = (msg.name || '').trim().slice(0, 100);
       if (!name) return;
       const existing = suggestions.find(s => s.name.toLowerCase() === name.toLowerCase());
       if (existing) { existing.count++; }
       else { suggestions.push({ id: msg.id || name, name, artist: msg.artist || '', image: msg.image || '', count: 1 }); }
-      submittedIPs.add(ip);
       suggestions.sort((a, b) => b.count - a.count);
-      broadcast({ type: 'state', suggestions, hasSubmitted: false });
+      broadcast({ type: 'state', suggestions });
       ws.send(JSON.stringify({ type: 'submit_confirmed' }));
     }
 
     if (msg.type === 'dj:reset') {
       suggestions = [];
-      submittedIPs = new Set();
-      broadcast({ type: 'state', suggestions, hasSubmitted: false });
+      broadcast({ type: 'state', suggestions });
     }
   });
 });
