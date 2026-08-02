@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-let suggestions = []; // [{ id, name, artist, image, count }]
+let suggestions = [];
 
 function broadcast(msg) {
   const data = JSON.stringify(msg);
@@ -39,13 +39,14 @@ wss.on('connection', (ws) => {
       suggestions = suggestions.filter(s => s.id !== msg.id);
       broadcast({ type: 'state', suggestions });
     }
+
+    if (msg.type === 'dj:reset') {
       suggestions = [];
       broadcast({ type: 'state', suggestions });
     }
   });
 });
 
-// Proxy Spotify con credenciales fijas
 const SPOTIFY_CLIENT_ID = '3771de1cb08541dbb62c9c8164a12852';
 const SPOTIFY_CLIENT_SECRET = '154a909e4a924686a490f53eb16feb89';
 
