@@ -126,6 +126,8 @@
   .empty-hint p { font-size: 0.9rem; line-height: 1.6; }
   .total-badge { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--text3); text-align: center; margin-bottom: 16px; }
   .total-badge span { color: var(--text2); }
+  .del-btn { flex-shrink: 0; width: 28px; height: 28px; background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text3); font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; position: relative; z-index: 1; }
+  .del-btn:hover { border-color: #ff4444; color: #ff4444; background: rgba(255,68,68,0.08); }
   .loading-hint { text-align: center; color: var(--text3); font-size: 0.85rem; padding: 20px; }
 </style>
 </head>
@@ -371,6 +373,7 @@ function renderDJ() {
         <img src="${esc(s.image)}" alt="" />
         <div class="suggestion-info"><div class="suggestion-name">${esc(s.name)}</div><div class="suggestion-artist">${esc(s.artist)}</div></div>
         <div class="suggestion-count">${s.count} <span>pedido${s.count !== 1 ? 's' : ''}</span></div>
+        <button class="del-btn" data-del="${esc(s.id)}" title="Eliminar">✕</button>
       </div>`).join('');
 
     document.getElementById('dj-content').innerHTML = badgeHTML +
@@ -382,6 +385,9 @@ function renderDJ() {
   document.getElementById('reset-btn').onclick = () => {
     if (confirm('¿Reiniciar todas las sugerencias?')) send({ type: 'dj:reset' });
   };
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.onclick = () => send({ type: 'dj:delete', id: btn.dataset.del });
+  });
 }
 
 // ═══ MODAL ═══

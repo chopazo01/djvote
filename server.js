@@ -35,7 +35,10 @@ wss.on('connection', (ws) => {
       ws.send(JSON.stringify({ type: 'submit_confirmed' }));
     }
 
-    if (msg.type === 'dj:reset') {
+    if (msg.type === 'dj:delete') {
+      suggestions = suggestions.filter(s => s.id !== msg.id);
+      broadcast({ type: 'state', suggestions });
+    }
       suggestions = [];
       broadcast({ type: 'state', suggestions });
     }
